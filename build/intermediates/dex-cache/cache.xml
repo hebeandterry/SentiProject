@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        is-multidex="false"
+        jar="C:\Users\Public\AndroidStudioProjects\Wifi Receiver_THLight 1121\libs\android-support-v4.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="23.0.3"
+        sha1="a13f8fe2c278737e2f0b6fcf00f6b2ae4034aacf">
+        <dex dex="C:\Users\Public\AndroidStudioProjects\Wifi Receiver_THLight 1121\build\intermediates\pre-dexed\debug\android-support-v4_faf9407b7eda09f95ef73534b1fbbccc7bf7bc8c.jar" />
+    </item>
+
+</items>
