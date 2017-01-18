@@ -521,12 +521,12 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
                         // do nothing;
                     }
                     break;
-                case Constants.MSG_RECEIVE_TIMER:
+               // case Constants.MSG_RECEIVE_TIMER:
 
                     //mHandler.sendEmptyMessage(Constants.MSG_RECEIVE);
                     //mHandler.sendEmptyMessageDelayed(Constants.MSG_RECEIVE_TIMER, 10);
 
-                    break;
+                  //  break;
 			}
 		}
 	};
