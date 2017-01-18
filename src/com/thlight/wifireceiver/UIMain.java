@@ -113,6 +113,9 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
 	
 	ArrayList<BeaconInfo> beaconList = new ArrayList<BeaconInfo>();
 	ArrayList<BeaconInfo> tempList = new ArrayList<BeaconInfo>();
+    ArrayList<BeaconInfo> aTotalBacon = new ArrayList<BeaconInfo>();
+    int u32DataCount = 0;
+    int u32Run = 0;
 	
 	usbSerialPortManager usbSerialPortManager = null;
 	ApManager apManager = null;
@@ -143,6 +146,7 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
 //	int scan_time = 0;
 //	int upload_time = 1000;
 
+
     class UploadDataToServer implements Runnable {
 
         @Override
@@ -158,6 +162,7 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
                     tempList = cloneList(beaconList);
                     final ArrayList<BeaconInfo> tempListForUpload = cloneList(beaconList);
                     beaconList.clear();
+                    u32Run = 0;
                     Log.d("debug", "beacon size:"+tempListForUpload.size());
 
                     if(tempList.isEmpty())
@@ -173,11 +178,11 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
                         beaconInfo.rssi = "0";
                         beaconInfo.count = 1;
                         tempList.add(beaconInfo);
+                        isUpdated = true;
 						curDate = null;
                         beaconInfo = null;
                     }
-
-                    if(!tempList.isEmpty())
+                    else
                     {
                         new Thread(new Runnable(){
                             @Override
@@ -188,7 +193,7 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
                                 //Log.d("debug", "beacon size:"+tempList.get(300));
                                 for(int i = 0 ; i < tempListForUpload.size(); i++)
                                 {
-                                    //Log.d("debug", "beacon("+ i +")count:"+tempList.get(i).count);
+                                    //Log.d("5566", "beacon("+ i +")count:"+tempList.get(i).scanned_mac);
                                     count = count + tempListForUpload.get(i).count;
                                 }
                                 Log.d("debug", "beacon total count:"+ count);
@@ -198,14 +203,11 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
                                 else if(THLApp.serverType.equals("iScan"))
                                     SendIScanDataToServer();
 
+                                //CountBeacon(tempListForUpload);
                                 tempListForUpload.clear();
                                 isUpdated = true;
                             }
                         }).start();
-                    }
-                    else
-                    {
-                        isUpdated = true;
                     }
                 }
             }
@@ -224,7 +226,30 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
 			{
 				case Constants.MSG_RECEIVE:		
 					strs = new String[usbSerialPortManager.deviceSize];
-					for(int i = 0 ; i < usbSerialPortManager.deviceSize ; i++)
+/*
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            byte[] buf = new byte[2000];
+                            int re = usbSerialPortManager.getSerialPortData(buf,1);
+                            if(MessageString.length() < 25000)
+                            {
+                                if(re != -1)
+                                {
+                                    for(int j = 0 ; j< re ;j++)
+                                    {
+                                        //								strs[i] +=(char)buf[j];
+                                        MessageString +=(char)buf[j];
+                                    }
+
+                                    buf = null;
+                                    //tv.setText(MessageString);
+                                }
+                            }
+                        }
+                    }).start();
+*/
+					for(int i = 0 ; i < 1; i++)//usbSerialPortManager.deviceSize ; i++)
 					{
 						byte[] buf = new byte[2000]; 
 						int re = usbSerialPortManager.getSerialPortData(buf,i);
@@ -239,7 +264,6 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
 								}
 	
 								buf = null;
-								//Log.d("debug", "re:"+re);
 								//tv.setText(MessageString);
 							}
 						}
@@ -249,10 +273,14 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
                             buf = null;
 						}
 					}
-					mHandler.sendEmptyMessageDelayed(Constants.MSG_RECEIVE,10);
+                   // String[] receivers = MessageString.split("\n");
+                    //u32Run++;
+                    //Log.d("terry", "receivers size: "+receivers.length + " u32Run : " + u32Run);
+					//mHandler.sendEmptyMessageDelayed(Constants.MSG_RECEIVE,10);
 					break;
 				case Constants.MSG_UPLOAD:
 					//if(isUpdated && !THLApp.BTMac.equals(""))
+                    Log.d("debug", "Enter MSG_UPLOAD");
 					if(!THLApp.BTMac.equals(""))
 					{
 						isUpdated = false;
@@ -261,7 +289,7 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
 						tempList = null;
 						tempList = cloneList(beaconList);
 						beaconList.clear();
-						Log.d("debug", "beacon size:"+tempList.size());
+						Log.d("debug, MSG_UPLOAD", "beacon size:"+tempList.size());
 						
 						if(tempList.isEmpty())
 						{
@@ -276,9 +304,9 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
 							beaconInfo.rssi = "0";
 							beaconInfo.count = 1;
 							tempList.add(beaconInfo);
+							isUpdated = true;
 						}
-						
-						if(!tempList.isEmpty())
+						else
 						{
 							new Thread(new Runnable(){	
 			                    @Override
@@ -303,10 +331,6 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
 			                    	isUpdated = true;
 			                    }
 			            	}).start();	
-						}
-						else
-						{
-							isUpdated = true;
 						}
 					}
 
@@ -451,11 +475,57 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
                         long period = Integer.valueOf(THLApp.upload_time);//1000; // the period between successive executions
                         scheduledFuture = exec.scheduleAtFixedRate(new UploadDataToServer(), period, period, TimeUnit.MILLISECONDS);
                         bUploadStart = true;
+
+                        for (int i =0; i< usbSerialPortManager.deviceSize; i++)
+                        {
+                            final int index = i;
+                            ScheduledThreadPoolExecutor receive = new ScheduledThreadPoolExecutor(1);
+                            long period2 = 50;//1000; // the period between successive executions
+                            scheduledFuture = receive.scheduleAtFixedRate (new Runnable() {
+                                @Override
+                                public void run() {
+                                    strs = new String[usbSerialPortManager.deviceSize];
+                                    byte[] buf = new byte[2000];
+                                    int re = usbSerialPortManager.getSerialPortData(buf, index);
+                                    if(MessageString.length() < 25000)
+                                    {
+                                        if(re != -1)
+                                        {
+                                            for(int j = 0 ; j< re ;j++)
+                                            {
+                                                //								strs[i] +=(char)buf[j];
+                                                MessageString +=(char)buf[j];
+                                            }
+
+                                            buf = null;
+                                            //tv.setText(MessageString);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        parseBeaconDataToList();
+                                        buf = null;
+                                    }
+
+                                     String[] receivers = MessageString.split("\n");
+                                    u32Run++;
+                                    //Log.d("terry", "receivers size: "+receivers.length + " u32Run : " + u32Run);
+
+                                }
+                            }
+                        , period2, period2, TimeUnit.MILLISECONDS);
+                        }
                     }
                     else
                     {
                         // do nothing;
                     }
+                    break;
+                case Constants.MSG_RECEIVE_TIMER:
+
+                    //mHandler.sendEmptyMessage(Constants.MSG_RECEIVE);
+                    //mHandler.sendEmptyMessageDelayed(Constants.MSG_RECEIVE_TIMER, 10);
+
                     break;
 			}
 		}
@@ -1325,6 +1395,8 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
 			}
 			
 		}
+
+        Log.d("5566", "receivers.length : " + receivers.length + " beaconList: " + beaconList.size());
 		receivers = null;
 		MessageString = "";
 	}
@@ -1347,7 +1419,7 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
     		object.put("name", "");
     		object.put("mac", THLApp.BTMac);
     		object.put("sentTime", formatter.format(curDate));
-            Log.d("Terry : ", "sentTime: " + formatter2.format(curDate));
+            //Log.d("Terry : ", "sentTime: " + formatter2.format(curDate));
     		object.put("scanned", jsArray1);
             curDate = null;
     	} catch (JSONException e) {
@@ -1471,5 +1543,42 @@ public class UIMain extends Activity implements View.OnClickListener , UncaughtE
 			myServerSocket = new MyServerSocket(UIMain.this, mHandler);
     	}
 	}
+
+    void CountBeacon(ArrayList<BeaconInfo> BeaconData)
+    {
+        boolean bRepeat = false;
+
+        u32DataCount = u32DataCount + BeaconData.size();
+        for (int i= 0; i< BeaconData.size(); i++)
+        {
+            if (aTotalBacon.isEmpty())
+            {
+                aTotalBacon.add(BeaconData.get(i));
+            }
+            else
+            {
+                for (int j = 0; j< aTotalBacon.size(); j++)
+                {
+                    if (aTotalBacon.get(j).scanned_mac.equals(BeaconData.get(i).scanned_mac))
+                    {
+                        aTotalBacon.get(j).count ++;
+                        bRepeat = true;
+                        break;
+                    }
+                }
+
+                if (bRepeat == false)
+                {
+                    aTotalBacon.add(BeaconData.get(i));
+                }
+            }
+        }
+
+        Log.d("5566", "Size: " + aTotalBacon.size() + " u32DataCount : " + u32DataCount);
+        for (int i = 0; i< aTotalBacon.size(); i++)
+        {
+            //Log.d("5566", "Mac : " + aTotalBacon.get(i).scanned_mac + " Count: " + aTotalBacon.get(i).count);
+        }
+    }
     
 }
